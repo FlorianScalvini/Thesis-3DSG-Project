@@ -1,0 +1,30 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSSumPathAgree
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+int width;
+int height;
+int num_disp;
+RWStructuredBuffer<uint> Input;
+RWStructuredBuffer<uint> Result;
+[numthreads(8,8,1)]
+void CSSumPathAgree(uint3 id : SV_DispatchThreadID)
+{
+    uint sum = 0;
+    // TODO: insert actual code here!
+    for (int r = 0; r < 4; r++)
+    {
+        if (0xffffffff - Input[width * height * num_disp * r + width * height * id.z + width * id.y + id.x] > sum)
+        {
+            sum += Input[width * height * num_disp * r + width * height * id.z + width * id.y + id.x];
+        }
+        else
+        {
+            sum = 0xffffffff;
+            break;
+        }
+
+    }
+    Result[width * height * id.z + width * id.y + id.x] = sum;
+}

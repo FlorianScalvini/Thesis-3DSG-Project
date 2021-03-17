@@ -1,0 +1,84 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSBlockMatSAD
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWStructuredBuffer<uint> Result;
+Texture2D<float4> ImgRight;
+Texture2D<float4> ImgLeft;
+int width;
+int height;
+
+
+[numthreads(8,8,1)]
+void CSBlockMatSAD(uint3 id : SV_DispatchThreadID)
+{
+    int widthWin = 2;
+    float3 pixelTarget;
+    float3 pixelRef;
+    double errorSum;
+    int maxDisparity = 16;
+    int memoIdx = 0;
+    double memoError = 0.0;
+    const int2 pixId = int2(id.x, id.y);
+    int index;
+
+    if (pixId.x - maxDisparity <= 0) {
+        index = 0;
+    }
+    else
+    {
+        index = pixId.x - maxDisparity;
+    }
+
+    do
+    {
+        errorSum = 0.0;
+        for (int y = -widthWin; y <= widthWin; y++)
+        {
+            for (int x = -widthWin; x <= widthWin; x++)
+            {
+                if (y + pixId.y < 0 || y + pixId.y >= height || x + pixId.x >= width || x + pixId.x < 0)
+                {
+                    pixelRef = float3(0.0, 0.0, 0.0);
+                    //pixelRef = 0.0;
+                }
+                else
+                {
+                    pixelRef = float3(ImgLeft[uint2(pixId.x + x, pixId.y + y)].xyz);
+                    //pixelRef = ImgLeft[uint2(pixId.x + x, pixId.y + y)].x;
+                }
+
+                if (x + index >= width || x + index < 0 || y + pixId.y < 0 || y + pixId.y >= height)
+                {
+                    pixelTarget = float3(0.0, 0.0, 0.0);
+                    //pixelTarget = 0.0;
+                }
+                else
+                {
+                    pixelTarget = float3(ImgRight[uint2(index + x, pixId.y + y)].xyz);
+                    //pixelTarget = ImgRight[uint2(index + x, pixId.y + y)].x;
+                }
+                errorSum += dot(abs(pixelRef.xyz - pixelTarget.xyz), double3(1.0, 1.0, 1.0));
+                //errorSum += abs(pixelRef.x - pixelTarget.x);
+            }
+        }
+
+
+
+        if (index == (pixId.x - maxDisparity) || index == 0) {
+            memoIdx = pixId.x - index;
+            memoError = errorSum;
+        }
+        else if (errorSum < memoError) {
+            memoError = errorSum;
+            memoIdx = pixId.x - index;
+        }
+        else if (errorSum == memoError && memoIdx >= pixId.x - index) {
+            memoIdx = pixId.x - index;
+        }
+        index++;
+    } while (index <= pixId.x);
+
+    Result[id.y * width + id.x] = memoIdx;
+}

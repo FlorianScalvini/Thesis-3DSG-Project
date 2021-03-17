@@ -1,0 +1,51 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSSobel
+#pragma enable_d3d11_debug_symbols
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+Texture2D<float4> ImgInput;
+RWTexture2D<float4> Result;
+int width;
+int height;
+
+[numthreads(8, 8, 1)]
+void CSSobel(uint3 id : SV_DispatchThreadID)
+{
+
+    /*
+    int widthWindow = 1;
+    const int sobelFilterY[9] = { -1, -2, -1, 0, 0, 0, 1, 2, 1 };
+    const int sobelFilterX[9] = { -1, 0, 1, -2, 0, 2, -1, 0, 1 };
+    float sumX = 0.0;
+    float sumY = 0.0;
+    float3 pixel;
+    int idx = 0;
+    float value = 0.0;
+
+    for (int i = -widthWindow; i <= widthWindow; i++) {
+        for (int y = -widthWindow; y <= widthWindow; y++) {
+            if (int(id.x) + i >= 0 && int(id.x) + i < width && int(id.y) + y >= 0 && int(id.y) + y < height)
+            {
+                pixel = ImgInput[uint2(id.x + i, id.y + y)].xyz;
+                value = 0.21 * pixel.x + 0.72 * pixel.y + 0.007 * pixel.z;
+                sumX += value * sobelFilterX[idx];
+                sumY += value * sobelFilterY[idx];
+            }
+            idx++;
+        }
+    }
+
+    value = sqrt(pow(sumX, 2) + pow(sumY, 2));
+
+    Result[id.xy] = float4(value, value, value, 1.0);
+
+    */
+    // TODO: insert actual code here!
+    
+
+    float grayscale = 0.21 * ImgInput[id.xy].x + 0.72 * ImgInput[id.xy].y + 0.007 * ImgInput[id.xy].z;
+    Result[id.xy] = float4(grayscale, grayscale, grayscale, 1.0);
+    //float grayscl = 0.21 * ImgInput[id.xy].x + 0.72 * ImgInput[id.xy].y + 0.007 * ImgInput[id.xy].z;
+    //Result[id.xy] = ImgInput[id.xy];
+
+}

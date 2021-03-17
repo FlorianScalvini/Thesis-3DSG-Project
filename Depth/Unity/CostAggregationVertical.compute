@@ -1,0 +1,84 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSCostAggregationVertical
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+int width;
+int height;
+int num_disp;
+int index;
+int penality_1;
+int penality_2;
+RWStructuredBuffer<uint> Input;
+RWStructuredBuffer<uint> minPreArray;
+RWStructuredBuffer<uint> Result;
+[numthreads(8, 8, 2)]
+void CSCostAggregationVertical(uint3 id : SV_DispatchThreadID)
+{
+    uint MAX_UINT = 0xffffffff;
+    if (id.z == 0) // Top To Bottom
+    {
+        if (int(id.x) > num_disp && index >= 2)
+        {
+            Result[height * width * num_disp * 2 + height * width * id.y + width * index + id.x] = Input[height * width * id.y + width * index + id.x];
+            if (index != 2)
+            {
+                uint disp_sub_one;
+                uint disp_plus_one;
+                uint disp_plus_0 = Result[height * width * num_disp * 2 + height * width * id.y + width * (index - 1) + id.x];
+                uint minPre = minPreArray[2 * width * height + width * (index - 1) + id.x];
+                uint temp;
+
+                disp_plus_one = (int(id.y) + 1 < num_disp) ? Result[height * width * num_disp * 2 + height * width * (id.y + 1) + width * (index - 1) + id.x] : MAX_UINT;
+                disp_sub_one = (int(id.y) - 1 >= 0) ? Result[height * width * num_disp * 2 + height * width * (id.y - 1) + width * (index - 1)+ id.x] : MAX_UINT;
+                temp = min(disp_sub_one, disp_plus_one);
+                temp = (MAX_UINT - penality_1 >= temp) ? temp + penality_1 : MAX_UINT;
+                temp = min(temp, disp_plus_0);
+                if (minPre != disp_sub_one && minPre != disp_sub_one && minPre != disp_sub_one && minPre != disp_plus_0 && MAX_UINT - penality_2 >= minPre)
+                {
+                    temp = min(temp, minPre + penality_2);
+                }
+                Result[height * width * num_disp * 2 + height * width * id.y + width * index + id.x] += temp - minPre;
+            }
+            InterlockedMin(minPreArray[2 * width * height + width * index  + id.x], Result[height * width * num_disp * 2 + height * width * id.y + width * index + id.x]);
+        }
+        else
+        {
+            Result[height * width * num_disp * 2 + height * width * id.y + width * index + id.x] = MAX_UINT;
+        }
+    }
+    else // Bottom To Top
+    {
+
+        if (int(id.x) > num_disp && index >= 2)
+        {
+            Result[height * width * num_disp * 3 + height * width * id.y + width * (height - 1 - index) + id.x] = Input[height * width * id.y + width * (height - 1 - index) + id.x];
+            if (index != 2)
+            {
+                uint disp_sub_one;
+                uint disp_plus_one;
+                uint disp_plus_0 = Result[height * width * num_disp * 3 + height * width * id.y + width * (height - index) + id.x];
+                uint minPre = minPreArray[3 * width * height + width * (height - index) + id.x];
+                uint temp;
+
+                disp_plus_one = (int(id.y) + 1 < num_disp && int(id.y) + 1 <= index) ? Result[height * width * num_disp * 3 + height * width * (id.y + 1) + width * (height - index) + id.x] : MAX_UINT;
+                disp_sub_one = (int(id.y) - 1 >= 0) ? Result[height * width * num_disp * 3 + height * width * (id.y - 1) + width * (height - index) + id.x] : MAX_UINT;
+                temp = min(disp_sub_one, disp_plus_one);
+                temp = (MAX_UINT - penality_1 >= temp) ? temp + penality_1 : MAX_UINT;
+                temp = min(temp, disp_plus_0);
+                if (minPre != disp_sub_one && minPre != disp_sub_one && minPre != disp_sub_one && minPre != disp_plus_0 && MAX_UINT - penality_2 >= minPre)
+                {
+                    temp = min(temp, minPre + penality_2);
+                }
+                Result[height * width * num_disp * 3 + height * width * id.y + width * (height - 1 - index) + id.x] += temp - minPre;
+            }
+            InterlockedMin(minPreArray[3 * width * height + width * (height - 1 - index) + id.x], Result[height * width * num_disp * 3 + height * width * id.y + width * (height - 1 - index) + id.x]);
+        }
+        else
+        {
+            Result[height * width * num_disp * 3 + height * width * id.y + width * (height - 1 - index) + id.x] = MAX_UINT;
+        }
+    }
+    
+}

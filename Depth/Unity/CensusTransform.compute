@@ -1,0 +1,54 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSCensusTransform
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+Texture2D<float4> ImgInput;
+Texture2D<float4> ImgInput_2;
+RWStructuredBuffer<uint> Result;
+int width;
+int height;
+
+[numthreads(8,8,1)]
+void CSCensusTransform (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    
+    uint bitsCensus = 0;
+    int widthWindow = 3;
+    if (widthWindow > 5) 
+    {
+        widthWindow = 5;
+    }
+    int idx = 0;
+    bool upper;
+    float pixelGray;
+    for (int y = -widthWindow; y <= widthWindow; y++) {
+        for (int i = widthWindow; i >= -widthWindow; i--) {
+            if (i != 0 || y != 0)
+            {
+                if (int(id.x) + i >= 0 && int(id.x) + i < width && int(id.y) + y >= 0 && int(id.y) + y < height)
+                {
+                    if (id.z == 0) {
+                        upper = ImgInput[uint2(id.x + i, id.y + y)].x > ImgInput[id.xy].x ? true : false;
+                    }
+                    else
+                    {
+                        upper = ImgInput_2[uint2(id.x + i, id.y + y)].x > ImgInput_2[id.xy].x ? true : false;
+                    }
+                }
+                else
+                {
+                    upper = true;
+                }
+                if (upper)
+                {
+                    bitsCensus |= 1 << idx;
+                }
+                idx++;
+            }
+        }
+    }
+    
+    Result[id.z * width * height + id.y * width + id.x] = bitsCensus;
+}

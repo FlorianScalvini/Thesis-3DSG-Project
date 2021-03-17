@@ -1,0 +1,30 @@
+﻿
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSWinnerTakeAll
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+int width;
+int height;
+int num_disp;
+RWStructuredBuffer<uint> Input;
+RWStructuredBuffer<float> Result;
+
+[numthreads(8,8,1)]
+void CSWinnerTakeAll(uint3 id : SV_DispatchThreadID)
+{
+    uint idx_disp = 0;
+    uint min_val = Input[width * height + width * id.y + id.x];
+    // TODO: insert actual code here!
+    for (int d = 0; d < num_disp; d++)
+    {
+        if (min_val > Input[d * width * height + width * id.y + id.x])
+        {
+            min_val = Input[d * width * height + width * id.y + id.x];
+            idx_disp = d;
+        }
+    }  
+
+ Result[width * id.y + id.x] = float(idx_disp);
+    
+}

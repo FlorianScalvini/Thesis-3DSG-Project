@@ -1,0 +1,88 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSCostAggregationHorizontal
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+int width;
+int height;
+int num_disp;
+int index;
+int penality_1;
+int penality_2;
+RWStructuredBuffer<uint> Input;
+RWStructuredBuffer<uint> minPreArray;
+RWStructuredBuffer<uint> Result;
+[numthreads(8,8,1)]
+void CSCostAggregationHorizontal(uint3 id : SV_DispatchThreadID)
+{
+    uint MAX_UINT = 0xffffffff;
+    if(id.z == 0)
+    {
+        if(index >= num_disp)
+        {
+            Result[height * width * id.y + width * id.x + index] = Input[height * width * id.y + width * id.x + index];
+            if (index != num_disp)
+            {
+                uint disp_sub_one;
+                uint disp_plus_one;
+                uint disp_plus_0 = Result[height * width * id.y + width * id.x + index - 1];
+                uint minPre = minPreArray[width * id.x + index - 1];
+                uint temp;
+                disp_plus_one = (int(id.y) + 1 < num_disp && int(id.y) + 1 <= index) ? Result[height * width * (id.y + 1) + width * id.x + index - 1] : MAX_UINT;
+                disp_sub_one = (int(id.y) - 1 >= 0) ? Result[height * width * (id.y - 1) + width * id.x + index - 1] : MAX_UINT;
+                temp = min(disp_sub_one, disp_plus_one);
+                temp = (MAX_UINT - penality_1 >= temp) ? temp + penality_1 : MAX_UINT;
+                temp = min(temp, disp_plus_0);
+                if (minPre != disp_sub_one && minPre != disp_sub_one && minPre != disp_sub_one && minPre != disp_plus_0 && MAX_UINT - penality_2 >= minPre)
+                {
+                    temp = min(temp, minPre + penality_2);
+                }
+                Result[height * width * id.y + width * id.x + index] += temp - minPre;
+            }
+            InterlockedMin(minPreArray[width * id.x + index], Result[height * width * id.y + width * id.x + index]);
+        }
+        else
+        {
+            Result[height * width * id.y + width * id.x + index] = MAX_UINT;
+        }
+
+    }
+
+    else
+    {
+       
+        if (width - index >= num_disp && index >= 2)
+        {
+            Result[height * width * num_disp + height * width * id.y + width * id.x + width - index - 1] = Input[height * width * id.y + width * id.x + width - index - 1];
+            if (index != 2)
+            {
+                uint disp_sub_one = MAX_UINT;
+                uint disp_plus_one = MAX_UINT;
+                uint disp_plus_0 = Result[height * width * num_disp + height * width * id.y + width * id.x + width - index];
+                uint minPre = minPreArray[width * height + width * id.x + width - index];
+                uint temp;
+
+                disp_plus_one = (int(id.y) + 1 < num_disp) ? Result[height * width * num_disp + height * width * (id.y + 1) + width * id.x + width - index] : MAX_UINT;
+                disp_sub_one = (int(id.y) - 1 >= 0) ? Result[height * width * num_disp + height * width * (id.y - 1) + width * id.x + width - index] : MAX_UINT;
+
+                temp = min(disp_sub_one, disp_plus_one);
+                temp = (MAX_UINT - penality_1 >= temp) ? temp + penality_1 : MAX_UINT;
+                temp = min(temp, disp_plus_0);
+                if (minPre != disp_sub_one && minPre != disp_sub_one && minPre != disp_sub_one && minPre != disp_plus_0 && MAX_UINT - penality_2 >= minPre)
+                {
+                    temp = min(temp, minPre + penality_2);
+                }
+                Result[height * width * num_disp + height * width * id.y + width * id.x + width - index - 1] += temp - minPre;
+            }
+            InterlockedMin(minPreArray[width * height + width * id.x + width - index - 1], Result[height * width * num_disp + height * width * id.y + width * id.x + width - index - 1]);
+        }
+        else
+        {
+            Result[height * width * num_disp +  height * width * id.y + width * id.x + width - index - 1] = MAX_UINT;
+        }
+        
+    }
+    
+    
+}

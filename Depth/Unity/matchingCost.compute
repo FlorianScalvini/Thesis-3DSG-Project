@@ -1,0 +1,40 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMatchCost
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+int num_disp;
+int width;
+int height;
+RWStructuredBuffer<uint> minPreArray;
+RWStructuredBuffer<uint> Input;
+RWStructuredBuffer<uint> Result;
+
+[numthreads(8, 8, 1)]
+void CSMatchCost(uint3 id : SV_DispatchThreadID)
+{
+
+    uint bitsCensus_A = Input[width * id.y + id.x];
+    uint bitsCensus_B;
+    uint countBits = 0;
+
+    
+    if (int(id.x) - int(id.z) >= 0)
+    {
+        bitsCensus_B = Input[width * height + width * id.y + int(id.x) - int(id.z)];
+        bitsCensus_B ^= bitsCensus_A;
+        while (bitsCensus_B > 0) {
+            countBits += bitsCensus_B & 1;
+            bitsCensus_B >>= 1;
+        }
+    }
+    else
+    {
+        countBits = 0xffffffff;
+    }
+    Result[id.z * width * height + id.y * width + id.x] = countBits;
+    minPreArray[id.y * width + id.x] = 0xffffffff;
+    minPreArray[width * height + id.y * width + id.x] = 0xffffffff;
+    minPreArray[2 *width * height + id.y * width + id.x] = 0xffffffff;
+    minPreArray[3 * width * height + id.y * width + id.x] = 0xffffffff;
+}

@@ -1,0 +1,77 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMedianFilter
+#pragma enable_d3d11_debug_symbols
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWStructuredBuffer<float> Input;
+RWTexture2D<float4> Result;
+uint width;
+uint height;
+int num_disp;
+float fovXbaseline;
+
+[numthreads(8, 8, 1)]
+void CSMedianFilter(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    const int  widthWindow = 3; // 3x3
+    uint idx = 0;
+    float res[(widthWindow * 2 + 1) * (widthWindow * 2 + 1)];
+    int resIndex[(widthWindow * 2 + 1) * (widthWindow * 2 + 1)];
+
+    for (int i = -widthWindow; i <= widthWindow; i++) {
+        for (int y = -widthWindow; y <= widthWindow; y++) {
+            if (int(id.x) + i >= 0 && int(id.x) + i < int(width) && int(id.y) + y >= 0 && int(id.y) + y < int(height))
+            {
+                res[idx] = Input[(int(id.y) + y) * width + int(id.x) + i];
+                resIndex[idx] = idx;
+                idx = idx + 1;
+            }
+        }
+    }
+
+    int indexMax;
+    int indexMin;
+    uint nb_its = (idx / 2);
+    if (idx % 2 == 1)
+    {
+        nb_its++;
+    }
+    for (uint index = 0; index < nb_its; index++)
+    {
+        indexMax = -1;
+        indexMin = -1;
+        for (uint it = 0; it < idx; it++)
+        {
+            if (resIndex[it] >= 0.0)
+            {
+                if (res[it] >= res[indexMax] || indexMax == -1)
+                {
+                    indexMax = it;
+                }
+                if (res[it] <= res[indexMin] || indexMin == -1)
+                {
+                    indexMin = it;
+                }
+            }
+        }
+        resIndex[indexMax] = -1;
+        resIndex[indexMin] = -1;
+    }
+
+    float mean_Median = 0;
+    if (idx % 2 == 0)
+    {
+        mean_Median = (res[indexMax] + res[indexMin]) / 2.0;
+        mean_Median = mean_Median / float(num_disp);
+    }
+    else
+    {
+        mean_Median = res[indexMax] / float(num_disp);
+    }
+
+    Result[id.xy] = float4(mean_Median, mean_Median, mean_Median, 1.0);
+    //Result[id.xy] = ImgInput[id.xy];
+}
+
+
