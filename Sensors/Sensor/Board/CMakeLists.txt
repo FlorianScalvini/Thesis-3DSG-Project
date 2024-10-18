@@ -1,0 +1,1 @@
+target_sources(sensor  PUBLIC ${PROJECT_SOURCE_DIR} jetson_orin_AGX.h)

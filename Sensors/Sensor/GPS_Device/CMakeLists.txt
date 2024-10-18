@@ -1,0 +1,1 @@
+target_sources(sensor PRIVATE adafruit_gps.cpp PUBLIC ${PROJECT_SOURCE_DIR} gps_constant.h adafruit_gps.h gps_capture.h)

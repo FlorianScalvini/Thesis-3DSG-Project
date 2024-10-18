@@ -1,0 +1,2 @@
+target_sources(sensor PRIVATE adafruit_imu_bno055_i2c.cpp euler_angle.cpp madgwick_ahrs.cpp mahony_ahrs.cpp adafruit_imu_bno055.cpp quaternion.cpp simple_ahrs.cpp PUBLIC
+        ${PROJECT_SOURCE_DIR} adafruit_imu_bno055_i2c.cpp adafruit_bno055_constant.h constant.h euler_angle.h madgwick_ahrs.h adafruit_imu_bno055.h adafruit_bno055_constant.h mahony_ahrs.h quaternion.h simple_ahrs.h imu_capture.h)
